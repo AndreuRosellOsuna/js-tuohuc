@@ -106,7 +106,7 @@ const createAnswer = async () => {
 // Shared
 const onMessageFromChannel = event => {
   const message = event.data;
-  addMessage(event.data);
+  addMessage(message);
 };
 
 const addMessage = message => {
@@ -155,8 +155,34 @@ function registerPeerConnectionListeners() {
   };
 }
 
+const requestMediaGrants = () => {
+  const constraints = {
+    video: true,
+    audio: true
+  };
+
+  navigator.mediaDevices
+    .getUserMedia(constraints)
+    .then(stream => {
+      const localVideo = document.getElementById("localVideo");
+      localVideo.srcObject = stream;
+      stream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, stream);
+      });
+    })
+    .catch(error => console.error("permission denied"));
+};
+
 // Init
 initButtons();
 const peerConnection = new RTCPeerConnection(configuration);
 let dataChannel;
 registerPeerConnectionListeners();
+requestMediaGrants();
+
+const remoteStream = new MediaStream();
+const remoteVideo = document.getElementById("remoteVideo");
+remoteVideo.srcObject = remoteStream;
+peerConnection.ontrack = event => {
+  remoteStream.addTrack(event.track, remoteStream);
+};
